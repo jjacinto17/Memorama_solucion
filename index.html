@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memorama</title>
+    <style>
+        canvas {
+            border: 3px black solid;
+            background: blue;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        body {
+            width: 1000px;
+            margin: 0% auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Memorama</h1>
+
+    <canvas id="canvas" width="1000" height="640"></canvas>
+
+    <script>
+
+        var canvas = document.getElementById("canvas");
+        var ctx = canvas.getContext("2d");
+
+        //Variables-Carta
+
+        var colorAtras = "red";
+        var inicioX = 45;
+        var inicioY = 50;
+        var cartaMargen = 20;
+        var cartaLongitud = 30;
+        var cartaAncho = cartaLongitud * 4;
+        var cartaLargo = cartaLongitud * 4;
+        var cartas_array = new Array();
+
+        //Crear carta
+
+        function Carta(x, y, ancho, largo, info) {
+
+            this.x = x;
+            this.y = y;
+            this.ancho = ancho;
+            this.largo = largo;
+            this.info = info;
+            this.dibuja = dibujaCarta;
+
+        }
+
+        function dibujaCarta() {
+ 
+            ctx.fillStyle = colorAtras;
+            ctx.fillRect(this.x, this.y, this.ancho, this.largo);
+
+        }
+
+        function tablero() {
+            var i;
+            var carta;
+            var x = inicioX;
+            var y = inicioY;
+
+            for (i=0; i<4; i++) {
+
+                carta = new Carta(x, y, cartaAncho, cartaLargo, i);
+                cartas_array.push(carta);
+                carta.dibuja();
+                //Segunda_carta
+                carta = new Carta(x, y+cartaAncho+cartaMargen, cartaAncho, cartaLargo, i);
+                cartas_array.push(carta);
+                carta.dibuja();
+                //Tercera_carta
+                carta = new Carta(x, y+cartaAncho+cartaMargen*8, cartaAncho, cartaLargo, i);
+                cartas_array.push(carta);
+                carta.dibuja();
+                //Cuarta_carta
+                carta = new Carta(x, y+cartaAncho+cartaMargen*15, cartaAncho, cartaLargo, i);
+                cartas_array.push(carta);
+                carta.dibuja();
+
+
+                x += cartaAncho + cartaMargen;
+
+            }
+        }
+
+       const update = () => {
+
+
+            tablero();
+            requestAnimationFrame(update);
+        }
+
+        requestAnimationFrame(update);
+
+    </script>
+
+</body>
+
+</html>
