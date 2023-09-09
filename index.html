@@ -58,7 +58,7 @@
         }
 
         function dibujaCarta() {
- 
+
             ctx.fillStyle = colorAtras;
             ctx.fillRect(this.x, this.y, this.ancho, this.largo);
 
@@ -70,21 +70,21 @@
             var x = inicioX;
             var y = inicioY;
 
-            for (i=0; i<4; i++) {
+            for (i = 0; i < 4; i++) {
 
                 carta = new Carta(x, y, cartaAncho, cartaLargo, i);
                 cartas_array.push(carta);
                 carta.dibuja();
                 //Segunda_carta
-                carta = new Carta(x, y+cartaAncho+cartaMargen, cartaAncho, cartaLargo, i);
+                carta = new Carta(x, y + cartaAncho + cartaMargen, cartaAncho, cartaLargo, i);
                 cartas_array.push(carta);
                 carta.dibuja();
                 //Tercera_carta
-                carta = new Carta(x, y+cartaAncho+cartaMargen*8, cartaAncho, cartaLargo, i);
+                carta = new Carta(x, y + cartaAncho + cartaMargen * 8, cartaAncho, cartaLargo, i);
                 cartas_array.push(carta);
                 carta.dibuja();
                 //Cuarta_carta
-                carta = new Carta(x, y+cartaAncho+cartaMargen*15, cartaAncho, cartaLargo, i);
+                carta = new Carta(x, y + cartaAncho + cartaMargen * 15, cartaAncho, cartaLargo, i);
                 cartas_array.push(carta);
                 carta.dibuja();
 
@@ -94,11 +94,65 @@
             }
         }
 
-       const update = () => {
+        function barajear() {
+            var i, j, k;
+            var temporal;
+            var lon = cartas_array.length;
 
+            for (j = 0; j < lon * 4; j++) {
+                i = Math.floor(Math.random() * lon);
+                k = Math.floor(Math.random() * lon);
 
+                temporal = cartas_array[i].info;
+
+                cartas_array[i].info = cartas_array[k];
+                cartas_array[k].info = temporal;
+            }
+        }
+
+        canvas.addEventListener("mousedown", seleccionarCarta, false);
+
+        //Obtiene la posicion del canvas
+        function ajusta(xx, yy) {
+
+            var posicionCanvas = canvas.getBoundingClientRect();
+
+            var x = xx - posicionCanvas.left;
+            var y = yy - posicionCanvas.top;
+            return { x: x, y: y }
+        }
+
+        //Obtiene la carta seleccionada
+        function seleccionarCarta(e) {
+
+           // console.log("llegue0")
+
+            var posicion = ajusta(e.clientX, e.clientY);
+
+            for (var i = 0; i < cartas_array.length; i++) {
+                var carta = cartas_array[i];
+
+                if (carta.x > 0) {
+
+                    if ((posicion.x > carta.x) && (posicion.x < carta.x + carta.ancho)
+                        && (posicion.y > carta.y) && (posicion.y < carta.y + carta.largo)) {
+                       // console.log("llegue");
+                        break;
+                    }
+                }
+            }
+
+            if (i < cartas_array.length) {
+               // console.log("llegue aqui");
+                alert(i);
+            }
+        }
+
+        const update = () => {
             tablero();
+            barajear();
             requestAnimationFrame(update);
+
         }
 
         requestAnimationFrame(update);
