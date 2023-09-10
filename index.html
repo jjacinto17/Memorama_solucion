@@ -29,12 +29,11 @@
     <canvas id="canvas" width="1000" height="640"></canvas>
 
     <script>
-
         var canvas = document.getElementById("canvas");
         var ctx = canvas.getContext("2d");
 
-        //Variables-Carta
-
+        // Variables-Carta
+        var colorDelante = "green";
         var colorAtras = "red";
         var inicioX = 45;
         var inicioY = 50;
@@ -42,55 +41,70 @@
         var cartaLongitud = 30;
         var cartaAncho = cartaLongitud * 4;
         var cartaLargo = cartaLongitud * 4;
-        var cartas_array = new Array();
+        var numerosCartas = [];
+        var cartas_array = [];
 
-        //Crear carta
+        // Contador de cartas emparejadas
+        var cartasEmparejadas = 0;
 
-        function Carta(x, y, ancho, largo, info) {
+        // Cartas seleccionadas
+        var cartasSeleccionadas = [];
 
+        // Dar vuelta a cartas que no coinciden
+        var contadorEspera = 0;
+        var tiempoEspera = 20;
+
+        // Dar numeros unicos para las cartas
+        for (var i = 0; i < 8; i++) {
+            numerosCartas.push(i);
+            numerosCartas.push(i);
+        }
+
+
+        function obtenerNumeroAleatorio() {
+            var indice = Math.floor(Math.random() * numerosCartas.length);
+            return numerosCartas.splice(indice, 1)[0];
+        }
+
+        // Crear carta
+        function Carta(x, y, ancho, largo, numero) {
             this.x = x;
             this.y = y;
             this.ancho = ancho;
             this.largo = largo;
-            this.info = info;
+            this.numero = numero;
+            this.volteada = false;
             this.dibuja = dibujaCarta;
-
         }
 
         function dibujaCarta() {
-
-            ctx.fillStyle = colorAtras;
-            ctx.fillRect(this.x, this.y, this.ancho, this.largo);
-
+            if (this.volteada) {
+                ctx.fillStyle = colorDelante;
+                ctx.fillRect(this.x, this.y, this.ancho, this.largo);
+                ctx.font = "bold 40px Arial";
+                ctx.fillStyle = "black";
+                ctx.fillText(String(this.numero),
+                    this.x + this.ancho / 2 - 10, this.y + this.largo / 2 + 10);
+            } else {
+                ctx.fillStyle = colorAtras;
+                ctx.fillRect(this.x, this.y, this.ancho, this.largo);
+            }
         }
 
         function tablero() {
-            var i;
-            var carta;
             var x = inicioX;
             var y = inicioY;
 
-            for (i = 0; i < 4; i++) {
-
-                carta = new Carta(x, y, cartaAncho, cartaLargo, i);
+            for (var i = 0; i < 16; i++) {
+                var numeroCarta = obtenerNumeroAleatorio();
+                var carta = new Carta(x, y, cartaAncho, cartaLargo, numeroCarta);
                 cartas_array.push(carta);
                 carta.dibuja();
-                //Segunda_carta
-                carta = new Carta(x, y + cartaAncho + cartaMargen, cartaAncho, cartaLargo, i);
-                cartas_array.push(carta);
-                carta.dibuja();
-                //Tercera_carta
-                carta = new Carta(x, y + cartaAncho + cartaMargen * 8, cartaAncho, cartaLargo, i);
-                cartas_array.push(carta);
-                carta.dibuja();
-                //Cuarta_carta
-                carta = new Carta(x, y + cartaAncho + cartaMargen * 15, cartaAncho, cartaLargo, i);
-                cartas_array.push(carta);
-                carta.dibuja();
-
-
                 x += cartaAncho + cartaMargen;
-
+                if (i % 4 == 3) {
+                    x = inicioX;
+                    y += cartaLargo + cartaMargen;
+                }
             }
         }
 
@@ -103,58 +117,103 @@
                 i = Math.floor(Math.random() * lon);
                 k = Math.floor(Math.random() * lon);
 
-                temporal = cartas_array[i].info;
+                temporal = cartas_array[i].numero;
 
-                cartas_array[i].info = cartas_array[k];
-                cartas_array[k].info = temporal;
+                cartas_array[i].numero = cartas_array[k].numero;
+                cartas_array[k].numero = temporal;
             }
+        }
+
+        function reiniciar() {
+            numerosCartas = [];
+            for (var i = 0; i < 8; i++) {
+                numerosCartas.push(i);
+                numerosCartas.push(i);
+            }
+            cartas_array.length = 0;
+            cartasEmparejadas = 0;
+            cartasSeleccionadas.length = 0;
+            contadorEspera = 0;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            tablero();
+            barajear();
+        }
+
+        function voltearCartas() {
+            setTimeout(function () {
+                cartasSeleccionadas.forEach(function (indice) {
+                    cartas_array[indice].volteada = false;
+                });
+                cartasSeleccionadas.length = 0;
+            }, 1000);
         }
 
         canvas.addEventListener("mousedown", seleccionarCarta, false);
 
-        //Obtiene la posicion del canvas
-        function ajusta(xx, yy) {
-
-            var posicionCanvas = canvas.getBoundingClientRect();
-
-            var x = xx - posicionCanvas.left;
-            var y = yy - posicionCanvas.top;
-            return { x: x, y: y }
-        }
-
-        //Obtiene la carta seleccionada
+        // Obtiene la carta seleccionada
         function seleccionarCarta(e) {
-
-           // console.log("llegue0")
-
             var posicion = ajusta(e.clientX, e.clientY);
 
             for (var i = 0; i < cartas_array.length; i++) {
                 var carta = cartas_array[i];
 
-                if (carta.x > 0) {
+                if (!carta.volteada && cartasSeleccionadas.length < 2 &&
+                    (posicion.x > carta.x) && (posicion.x < carta.x + carta.ancho)
+                    && (posicion.y > carta.y) && (posicion.y < carta.y + carta.largo)) {
+                    carta.volteada = true;
+                    carta.dibuja();
+                    cartasSeleccionadas.push(i);
 
-                    if ((posicion.x > carta.x) && (posicion.x < carta.x + carta.ancho)
-                        && (posicion.y > carta.y) && (posicion.y < carta.y + carta.largo)) {
-                       // console.log("llegue");
-                        break;
+                    if (cartasSeleccionadas.length === 2) {
+                        if (cartas_array[cartasSeleccionadas[0]].numero === cartas_array[cartasSeleccionadas[1]].numero) {
+                            cartasEmparejadas += 2;
+                            if (cartasEmparejadas === cartas_array.length) {
+                                alert("¡Has ganado!");
+                                reiniciar();
+                            }
+                            cartasSeleccionadas.length = 0;
+                        } else {
+                            contadorEspera = tiempoEspera;
+                        }
                     }
+                    break;
                 }
             }
+        }
 
-            if (i < cartas_array.length) {
-               // console.log("llegue aqui");
-                alert(i);
+        // Obtiene la posición del canvas
+        function ajusta(xx, yy) {
+            var posicionCanvas = canvas.getBoundingClientRect();
+            var x = xx - posicionCanvas.left;
+            var y = yy - posicionCanvas.top;
+            return { x: x, y: y }
+        }
+
+        // Limpia el canvas y dibuja todas las cartas
+        function limpiarCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (var i = 0; i < cartas_array.length; i++) {
+                cartas_array[i].dibuja();
             }
         }
 
         const update = () => {
-            tablero();
-            barajear();
+            limpiarCanvas();
+            if (contadorEspera > 0) {
+                contadorEspera--;
+                if (contadorEspera === 0) {
+                    // Voltear cartas
+                    cartasSeleccionadas.forEach(function (indice) {
+                        cartas_array[indice].volteada = false;
+                    });
+                    cartasSeleccionadas.length = 0;
+                }
+            }
             requestAnimationFrame(update);
-
         }
 
+        tablero();
+        barajear();
         requestAnimationFrame(update);
 
     </script>
