@@ -9,6 +9,8 @@
         canvas {
             border: 3px black solid;
             background: blue;
+            display: block;
+            margin: 0 auto;
         }
 
         h1 {
@@ -16,33 +18,102 @@
         }
 
         body {
-            width: 1000px;
-            margin: 0% auto;
+            width: 950px;
+            margin: 0 auto;
+        }
+
+        #modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        #modal-content {
+            background-color: #fefefe;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #modal-content button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
         }
     </style>
 </head>
 
 <body>
-
     <h1>Memorama</h1>
-
-    <canvas id="canvas" width="1000" height="640"></canvas>
-
+    <canvas id="canvas" width="950px" height="670"></canvas>
+    <div id="modal">
+        <div id="modal-content">
+            <h2>Selecciona un modo de juego:</h2>
+            <button onclick="iniciarJuego(15 * 60)">Fácil (15 minutos)</button>
+            <button onclick="iniciarJuego(10 * 60)">Normal (10 minutos)</button>
+            <button onclick="iniciarJuego(5 * 60)">Difícil (5 minutos)</button>
+        </div>
+    </div>
     <script>
         var canvas = document.getElementById("canvas");
         var ctx = canvas.getContext("2d");
+        var modal = document.getElementById("modal");
 
         // Variables-Carta
         var colorDelante = "green";
         var colorAtras = "red";
-        var inicioX = 45;
-        var inicioY = 50;
-        var cartaMargen = 20;
-        var cartaLongitud = 30;
-        var cartaAncho = cartaLongitud * 4;
-        var cartaLargo = cartaLongitud * 4;
+        var cartaMargen = 10;
+        var cartaLongitud = 100;
+        var cartaAncho = cartaLongitud;
+        var cartaLargo = cartaLongitud;
         var numerosCartas = [];
         var cartas_array = [];
+        var modalVisible = true;
+        var tiempoLimite = 0;
+        var tiempoInicio = 0;
+        var tiempoRestante = 0;
+
+
+        function dibujarModal() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+           
+        }
+
+        function iniciarJuego(tiempo) {
+            modal.style.display = "none"; 
+            modalVisible = false;
+            tiempoLimite = tiempo;
+            tiempoInicio = Date.now();
+            tiempoRestante = tiempoLimite;
+        }
+
+        function dibujarTiempo() {
+            ctx.font = "bold 20px Arial";
+            ctx.fillStyle = "white";
+            var minutos = Math.floor(tiempoRestante / 60);
+            var segundos = Math.floor(tiempoRestante % 60); 
+            var tiempoFormateado = minutos.toString().padStart(2, '0') + ":" + segundos.toString().padStart(2, '0');
+            ctx.fillText("Tiempo restante: " + tiempoFormateado, canvas.width - 250, 30);
+        }
+
+        function formatearTiempo(segundos) {
+            var minutos = Math.floor(segundos / 60);
+            var segundosRestantes = segundos % 60;
+
+
+           
+            var tiempoFormateado = minutos.toString().padStart(2, '0') + ":" + segundosRestantes.toString().padStart(2, '0');
+
+            return tiempoFormateado;
+        }
 
         // Contador de cartas emparejadas
         var cartasEmparejadas = 0;
@@ -54,12 +125,11 @@
         var contadorEspera = 0;
         var tiempoEspera = 20;
 
-        // Dar numeros unicos para las cartas
-        for (var i = 0; i < 8; i++) {
+        // Dar números únicos para las cartas
+        for (var i = 0; i < 15; i++) {
             numerosCartas.push(i);
             numerosCartas.push(i);
         }
-
 
         function obtenerNumeroAleatorio() {
             var indice = Math.floor(Math.random() * numerosCartas.length);
@@ -92,18 +162,19 @@
         }
 
         function tablero() {
-            var x = inicioX;
-            var y = inicioY;
+            var numColumnas = 5;
+            var numFilas = 6;
+            var espacioHorizontal = cartaAncho + cartaMargen;
+            var espacioVertical = cartaLargo + cartaMargen;
 
-            for (var i = 0; i < 16; i++) {
-                var numeroCarta = obtenerNumeroAleatorio();
-                var carta = new Carta(x, y, cartaAncho, cartaLargo, numeroCarta);
-                cartas_array.push(carta);
-                carta.dibuja();
-                x += cartaAncho + cartaMargen;
-                if (i % 4 == 3) {
-                    x = inicioX;
-                    y += cartaLargo + cartaMargen;
+            for (var fila = 0; fila < numFilas; fila++) {
+                for (var columna = 0; columna < numColumnas; columna++) {
+                    var numeroCarta = obtenerNumeroAleatorio();
+                    var x = columna * espacioHorizontal + cartaMargen;
+                    var y = fila * espacioVertical + cartaMargen;
+                    var carta = new Carta(x, y, cartaAncho, cartaLargo, numeroCarta);
+                    cartas_array.push(carta);
+                    carta.dibuja();
                 }
             }
         }
@@ -125,8 +196,11 @@
         }
 
         function reiniciar() {
+            modal.style.display = "block";
+            modalVisible = true;
+            tiempoLimite = 0;
             numerosCartas = [];
-            for (var i = 0; i < 8; i++) {
+            for (var i = 0; i < 15; i++) {
                 numerosCartas.push(i);
                 numerosCartas.push(i);
             }
@@ -209,6 +283,18 @@
                     cartasSeleccionadas.length = 0;
                 }
             }
+            // Verificar el tiempo límite
+            if (!modalVisible) {
+                var currentTime = Date.now();
+                var elapsedTime = (currentTime - tiempoInicio) / 1000;
+                tiempoRestante = tiempoLimite - elapsedTime;
+                if (elapsedTime >= tiempoLimite) {
+                    alert("¡Tiempo agotado! Reiniciando el juego.");
+                    reiniciar();
+                }
+            }
+
+            dibujarTiempo();
             requestAnimationFrame(update);
         }
 
@@ -217,7 +303,6 @@
         requestAnimationFrame(update);
 
     </script>
-
 </body>
 
 </html>
