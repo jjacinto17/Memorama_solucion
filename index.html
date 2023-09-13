@@ -50,8 +50,8 @@
 </head>
 
 <body>
-    <h1>Memorama</h1>
-    <canvas id="canvas" width="950px" height="670"></canvas>
+    <h1>MemoramaTumbado</h1>
+    <canvas id="canvas" width="950" height="670"></canvas>
     <div id="modal">
         <div id="modal-content">
             <h2>Selecciona un modo de juego:</h2>
@@ -79,16 +79,36 @@
         var tiempoInicio = 0;
         var tiempoRestante = 0;
 
+        var numerosUnicos = [];
+
+        for (var i = 0; i < 14; i++) {
+            var numeroCarta = obtenerNumeroAleatorio();
+            if (numeroCarta !== undefined) {
+                numerosCartas.push(numeroCarta);
+                numerosCartas.push(numeroCarta);
+            }
+        }
+        // Duplicar los números para tener 15 pares
+        var numerosCartas = numerosUnicos.concat(numerosUnicos);
+
+        // Barajar los números
+        for (var j = numerosCartas.length - 1; j > 0; j--) {
+            var k = Math.floor(Math.random() * (j + 1));
+            var temp = numerosCartas[j];
+            numerosCartas[j] = numerosCartas[k];
+            numerosCartas[k] = temp;
+        }
+
 
         function dibujarModal() {
             ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-           
+
         }
 
         function iniciarJuego(tiempo) {
-            modal.style.display = "none"; 
+            modal.style.display = "none";
             modalVisible = false;
             tiempoLimite = tiempo;
             tiempoInicio = Date.now();
@@ -99,7 +119,7 @@
             ctx.font = "bold 20px Arial";
             ctx.fillStyle = "white";
             var minutos = Math.floor(tiempoRestante / 60);
-            var segundos = Math.floor(tiempoRestante % 60); 
+            var segundos = Math.floor(tiempoRestante % 60);
             var tiempoFormateado = minutos.toString().padStart(2, '0') + ":" + segundos.toString().padStart(2, '0');
             ctx.fillText("Tiempo restante: " + tiempoFormateado, canvas.width - 250, 30);
         }
@@ -108,8 +128,6 @@
             var minutos = Math.floor(segundos / 60);
             var segundosRestantes = segundos % 60;
 
-
-           
             var tiempoFormateado = minutos.toString().padStart(2, '0') + ":" + segundosRestantes.toString().padStart(2, '0');
 
             return tiempoFormateado;
@@ -132,11 +150,13 @@
         }
 
         function obtenerNumeroAleatorio() {
+            if (numerosCartas.length === 0) {
+                return undefined; // No quedan números únicos disponibles
+            }
             var indice = Math.floor(Math.random() * numerosCartas.length);
             return numerosCartas.splice(indice, 1)[0];
         }
 
-        // Crear carta
         function Carta(x, y, ancho, largo, numero) {
             this.x = x;
             this.y = y;
@@ -144,23 +164,21 @@
             this.largo = largo;
             this.numero = numero;
             this.volteada = false;
+            this.rutaImagen = `Cartas_img/carta${numero}.jpg`; // Almacenar la ruta de la imagen
+            this.imagen = new Image();
+            this.imagen.src = this.rutaImagen; // Cargar la imagen correspondiente
+
             this.dibuja = dibujaCarta;
         }
 
         function dibujaCarta() {
             if (this.volteada) {
-                ctx.fillStyle = colorDelante;
-                ctx.fillRect(this.x, this.y, this.ancho, this.largo);
-                ctx.font = "bold 40px Arial";
-                ctx.fillStyle = "black";
-                ctx.fillText(String(this.numero),
-                    this.x + this.ancho / 2 - 10, this.y + this.largo / 2 + 10);
+                ctx.drawImage(this.imagen, this.x, this.y, this.ancho, this.largo);
             } else {
                 ctx.fillStyle = colorAtras;
                 ctx.fillRect(this.x, this.y, this.ancho, this.largo);
             }
         }
-
         function tablero() {
             var numColumnas = 5;
             var numFilas = 6;
@@ -195,22 +213,74 @@
             }
         }
 
+        function verificarCartasIguales() {
+            if (cartasSeleccionadas.length === 2) {
+                var primeraCarta = cartas_array[cartasSeleccionadas[0]];
+                var segundaCarta = cartas_array[cartasSeleccionadas[1]];
+
+                if (primeraCarta.rutaImagen === segundaCarta.rutaImagen) {
+                    // Las imágenes son iguales, se ha encontrado un par correcto
+                    cartasEmparejadas += 2;
+                    if (cartasEmparejadas === cartas_array.length) {
+                        alert("¡Has ganado!");
+                        reiniciar();
+                    }
+                    cartasSeleccionadas.length = 0;
+                } else {
+                    // Las imágenes no son iguales, voltear las cartas nuevamente
+                    voltearCartas();
+                }
+            }
+        }
+
         function reiniciar() {
             modal.style.display = "block";
             modalVisible = true;
             tiempoLimite = 0;
-            numerosCartas = [];
-            for (var i = 0; i < 15; i++) {
-                numerosCartas.push(i);
-                numerosCartas.push(i);
-            }
+            tiempoInicio = 0;
+            tiempoRestante = 0;
             cartas_array.length = 0;
             cartasEmparejadas = 0;
             cartasSeleccionadas.length = 0;
             contadorEspera = 0;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            tablero();
-            barajear();
+
+            // Restaurar la lista de números únicos
+            numerosCartas = [];
+            for (var i = 0; i < 14; i++) {
+                var numeroCarta = obtenerNumeroAleatorio();
+                if (numeroCarta !== undefined) {
+                    numerosCartas.push(numeroCarta);
+                    numerosCartas.push(numeroCarta);
+                }
+            }
+
+            // Duplicar los números para tener 15 pares
+            numerosCartas = numerosCartas.concat(numerosCartas);
+
+            // Barajar los números
+            for (var j = numerosCartas.length - 1; j > 0; j--) {
+                var k = Math.floor(Math.random() * (j + 1));
+                var temp = numerosCartas[j];
+                numerosCartas[j] = numerosCartas[k];
+                numerosCartas[k] = temp;
+            }
+
+            // Cargar las imágenes nuevamente
+            imagenesCargadas = 0;
+            totalImagenes = numerosCartas.length;
+
+            for (var i = 0; i < totalImagenes; i++) {
+                var carta = new Carta(0, 0, cartaAncho, cartaLargo, numerosCartas[i]);
+                carta.imagen.onload = function () {
+                    imagenesCargadas++;
+                    if (imagenesCargadas === totalImagenes) {
+                        // Todas las imágenes han cargado, iniciar el juego
+                        tablero();
+                        barajear();
+                    }
+                };
+            }
         }
 
         function voltearCartas() {
@@ -237,23 +307,12 @@
                     carta.volteada = true;
                     carta.dibuja();
                     cartasSeleccionadas.push(i);
-
-                    if (cartasSeleccionadas.length === 2) {
-                        if (cartas_array[cartasSeleccionadas[0]].numero === cartas_array[cartasSeleccionadas[1]].numero) {
-                            cartasEmparejadas += 2;
-                            if (cartasEmparejadas === cartas_array.length) {
-                                alert("¡Has ganado!");
-                                reiniciar();
-                            }
-                            cartasSeleccionadas.length = 0;
-                        } else {
-                            contadorEspera = tiempoEspera;
-                        }
-                    }
+                    verificarCartasIguales(); // Verificar si las cartas son iguales
                     break;
                 }
             }
         }
+
 
         // Obtiene la posición del canvas
         function ajusta(xx, yy) {
@@ -298,9 +357,21 @@
             requestAnimationFrame(update);
         }
 
-        tablero();
-        barajear();
-        requestAnimationFrame(update);
+        var imagenesCargadas = 0;
+        var totalImagenes = numerosCartas.length;
+
+        for (var i = 0; i < totalImagenes; i++) {
+            var carta = new Carta(0, 0, cartaAncho, cartaLargo, numerosCartas[i]);
+            carta.imagen.onload = function () {
+                imagenesCargadas++;
+                if (imagenesCargadas === totalImagenes) {
+                    // Todas las imágenes han cargado, iniciar el juego
+                    tablero();
+                    barajear();
+                    requestAnimationFrame(update);
+                }
+            };
+        }
 
     </script>
 </body>
