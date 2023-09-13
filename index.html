@@ -4,13 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memorama</title>
+    <title>MemoramaTumbado</title>
     <style>
         canvas {
             border: 3px black solid;
-            background: blue;
             display: block;
             margin: 0 auto;
+        }
+
+        .canvas-con-fondo {
+            background-image: url('Cartas_img/fondoCanvas.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
         }
 
         h1 {
@@ -20,6 +25,7 @@
         body {
             width: 950px;
             margin: 0 auto;
+            background-color: #1d1d1d;
         }
 
         #modal {
@@ -27,7 +33,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
+            height: 110%;
             background-color: rgba(0, 0, 0, 0.7);
             display: flex;
             align-items: center;
@@ -36,38 +42,89 @@
         }
 
         #modal-content {
-            background-color: #fefefe;
+            background-color: #1d1d1d;
             padding: 20px;
             text-align: center;
+            -webkit-text-fill-color: aliceblue;
         }
 
         #modal-content button {
             margin: 10px;
             padding: 10px 20px;
             font-size: 16px;
+            background-color: rgb(71, 71, 71);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content {
+            background-color: #1d1d1d;
+            margin: auto;
+            padding: 20px;
+            width: 60%;
+            text-align: center;
+            -webkit-text-fill-color: aliceblue;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px solid black;
+        }
+
+        #modalButton {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: rgb(71, 71, 71);
         }
     </style>
 </head>
 
 <body>
-    <h1>MemoramaTumbado</h1>
-    <canvas id="canvas" width="950" height="670"></canvas>
+    <h1 style="color: white">MemoramaTumbado</h1>
+    <canvas id="canvas" class="canvas-con-fondo" width="950" height="670"></canvas>
+    <div id="info"
+        style="position: absolute; bottom: 450px; right: 349px; background-color: rgba(0, 0, 0, 0.7); padding: 25px; color: white;">
+        Pares Acertados: <span id="paresAcertados">0</span> | Intentos: <span id="intentos">0</span>
+    </div>
     <div id="modal">
         <div id="modal-content">
             <h2>Selecciona un modo de juego:</h2>
-            <button onclick="iniciarJuego(15 * 60)">Fácil (15 minutos)</button>
-            <button onclick="iniciarJuego(10 * 60)">Normal (10 minutos)</button>
-            <button onclick="iniciarJuego(5 * 60)">Difícil (5 minutos)</button>
+            <button onclick="iniciarJuego(10 * 60)">Fácil (10 minutos)</button>
+            <button onclick="iniciarJuego(5 * 60)">Normal (5 minutos)</button>
+            <button onclick="iniciarJuego(1 * 60)">Difícil (1 minutos)</button>
         </div>
     </div>
+    <div id="modalMessage" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="messageText"></span>
+            <button id="modalButton" onclick="cerrarModalTiempoAgotado()">Aceptar</button>
+        </div>
+    </div>
+    <audio id="s_voltearCarta" controls style="display: none;">
+        <source src="sonidos/voltearCartas.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="s_barajearCarta" controls style="display: none;">
+        <source src="sonidos/barajearCartas.mp3" type="audio/mpeg">
+    </audio>
     <script>
         var canvas = document.getElementById("canvas");
         var ctx = canvas.getContext("2d");
         var modal = document.getElementById("modal");
 
         // Variables-Carta
-        var colorDelante = "green";
-        var colorAtras = "red";
+        var colorAtras = new Image();
+        colorAtras.src = 'Cartas_img/cartaAtras.jpg';
         var cartaMargen = 10;
         var cartaLongitud = 100;
         var cartaAncho = cartaLongitud;
@@ -78,6 +135,10 @@
         var tiempoLimite = 0;
         var tiempoInicio = 0;
         var tiempoRestante = 0;
+        var paresAcertados = 0;
+        var intentos = 0;
+        var s_barajearCarta = document.getElementById('s_barajearCarta');
+        var s_voltearCarta = document.getElementById('s_voltearCarta');
 
         var numerosUnicos = [];
 
@@ -88,10 +149,10 @@
                 numerosCartas.push(numeroCarta);
             }
         }
-        // Duplicar los números para tener 15 pares
+
         var numerosCartas = numerosUnicos.concat(numerosUnicos);
 
-        // Barajar los números
+
         for (var j = numerosCartas.length - 1; j > 0; j--) {
             var k = Math.floor(Math.random() * (j + 1));
             var temp = numerosCartas[j];
@@ -103,8 +164,19 @@
         function dibujarModal() {
             ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
 
+        function mostrarModal(message) {
+            var modal = document.getElementById("modalMessage");
+            var messageText = document.getElementById("messageText");
 
+            messageText.textContent = message;
+            modal.style.display = "block";
+        }
+
+        function cerrarModalTiempoAgotado() {
+            var modalMessage = document.getElementById("modalMessage");
+            modalMessage.style.display = "none";
         }
 
         function iniciarJuego(tiempo) {
@@ -113,15 +185,19 @@
             tiempoLimite = tiempo;
             tiempoInicio = Date.now();
             tiempoRestante = tiempoLimite;
+            s_barajearCarta.play();
+
         }
 
         function dibujarTiempo() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+            ctx.fillRect(canvas.width - 335, 50, 250, 50);
             ctx.font = "bold 20px Arial";
             ctx.fillStyle = "white";
             var minutos = Math.floor(tiempoRestante / 60);
             var segundos = Math.floor(tiempoRestante % 60);
             var tiempoFormateado = minutos.toString().padStart(2, '0') + ":" + segundos.toString().padStart(2, '0');
-            ctx.fillText("Tiempo restante: " + tiempoFormateado, canvas.width - 250, 30);
+            ctx.fillText("Tiempo restante: " + tiempoFormateado, canvas.width - 319, 80);
         }
 
         function formatearTiempo(segundos) {
@@ -151,7 +227,7 @@
 
         function obtenerNumeroAleatorio() {
             if (numerosCartas.length === 0) {
-                return undefined; // No quedan números únicos disponibles
+                return undefined;
             }
             var indice = Math.floor(Math.random() * numerosCartas.length);
             return numerosCartas.splice(indice, 1)[0];
@@ -164,20 +240,23 @@
             this.largo = largo;
             this.numero = numero;
             this.volteada = false;
-            this.rutaImagen = `Cartas_img/carta${numero}.jpg`; // Almacenar la ruta de la imagen
+            this.rutaImagen = `Cartas_img/carta${numero}.jpg`;
             this.imagen = new Image();
-            this.imagen.src = this.rutaImagen; // Cargar la imagen correspondiente
+            this.imagen.src = this.rutaImagen;
 
             this.dibuja = dibujaCarta;
         }
 
         function dibujaCarta() {
-            if (this.volteada) {
-                ctx.drawImage(this.imagen, this.x, this.y, this.ancho, this.largo);
-            } else {
-                ctx.fillStyle = colorAtras;
-                ctx.fillRect(this.x, this.y, this.ancho, this.largo);
+
+            if (!modalVisible) {
+                if (!this.volteada) {
+                    ctx.drawImage(colorAtras, this.x, this.y, this.ancho, this.largo);
+                } else {
+                    ctx.drawImage(this.imagen, this.x, this.y, this.ancho, this.largo);
+                }
             }
+
         }
         function tablero() {
             var numColumnas = 5;
@@ -218,19 +297,32 @@
                 var primeraCarta = cartas_array[cartasSeleccionadas[0]];
                 var segundaCarta = cartas_array[cartasSeleccionadas[1]];
 
+
+
                 if (primeraCarta.rutaImagen === segundaCarta.rutaImagen) {
-                    // Las imágenes son iguales, se ha encontrado un par correcto
                     cartasEmparejadas += 2;
+                    paresAcertados++;
                     if (cartasEmparejadas === cartas_array.length) {
-                        alert("¡Has ganado!");
+                        mostrarModal("¡Has ganado! Deseas volver a jugar?");
                         reiniciar();
                     }
                     cartasSeleccionadas.length = 0;
+                    actualizarContadorCartasAcertadas();
+
                 } else {
-                    // Las imágenes no son iguales, voltear las cartas nuevamente
                     voltearCartas();
                 }
             }
+        }
+
+        function actualizarContadorCartasAcertadas() {
+            var contadorCartasAcertadas = document.getElementById("paresAcertados");
+            contadorCartasAcertadas.textContent = paresAcertados;
+        }
+
+        function actualizarContadorIntentos() {
+            var contadorIntentos = document.getElementById("intentos");
+            contadorIntentos.textContent = intentos;
         }
 
         function reiniciar() {
@@ -239,7 +331,8 @@
             tiempoLimite = 0;
             tiempoInicio = 0;
             tiempoRestante = 0;
-            cartas_array.length = 0;
+            paresAcertados = 0;
+            intentos = 0;
             cartasEmparejadas = 0;
             cartasSeleccionadas.length = 0;
             contadorEspera = 0;
@@ -255,10 +348,10 @@
                 }
             }
 
-            // Duplicar los números para tener 15 pares
+            // Tener los pares correctos
             numerosCartas = numerosCartas.concat(numerosCartas);
 
-            // Barajar los números
+            // Barajear numeros
             for (var j = numerosCartas.length - 1; j > 0; j--) {
                 var k = Math.floor(Math.random() * (j + 1));
                 var temp = numerosCartas[j];
@@ -266,7 +359,15 @@
                 numerosCartas[k] = temp;
             }
 
-            // Cargar las imágenes nuevamente
+            // Configurar el estado de las cartas a no volteadas
+            for (var i = 0; i < cartas_array.length; i++) {
+                cartas_array[i].volteada = false;
+            }
+
+            actualizarContadorCartasAcertadas();
+            actualizarContadorIntentos();
+
+            //Cargar imagenes
             imagenesCargadas = 0;
             totalImagenes = numerosCartas.length;
 
@@ -275,13 +376,13 @@
                 carta.imagen.onload = function () {
                     imagenesCargadas++;
                     if (imagenesCargadas === totalImagenes) {
-                        // Todas las imágenes han cargado, iniciar el juego
                         tablero();
                         barajear();
                     }
                 };
             }
         }
+
 
         function voltearCartas() {
             setTimeout(function () {
@@ -307,7 +408,12 @@
                     carta.volteada = true;
                     carta.dibuja();
                     cartasSeleccionadas.push(i);
-                    verificarCartasIguales(); // Verificar si las cartas son iguales
+                    verificarCartasIguales();
+                    s_voltearCarta.pause();
+                    s_voltearCarta.currentTime = 0;
+                    s_voltearCarta.play();
+                    intentos++;
+                    actualizarContadorIntentos();
                     break;
                 }
             }
@@ -342,13 +448,14 @@
                     cartasSeleccionadas.length = 0;
                 }
             }
+
             // Verificar el tiempo límite
             if (!modalVisible) {
                 var currentTime = Date.now();
                 var elapsedTime = (currentTime - tiempoInicio) / 1000;
                 tiempoRestante = tiempoLimite - elapsedTime;
                 if (elapsedTime >= tiempoLimite) {
-                    alert("¡Tiempo agotado! Reiniciando el juego.");
+                    mostrarModal("¡Tiempo agotado! Reiniciando el juego.");
                     reiniciar();
                 }
             }
@@ -365,7 +472,6 @@
             carta.imagen.onload = function () {
                 imagenesCargadas++;
                 if (imagenesCargadas === totalImagenes) {
-                    // Todas las imágenes han cargado, iniciar el juego
                     tablero();
                     barajear();
                     requestAnimationFrame(update);
