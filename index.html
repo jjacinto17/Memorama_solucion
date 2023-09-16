@@ -127,14 +127,14 @@
     <audio id="s_musicaFondo" controls style="display: none;" loop preload="auto">
         <source src="sonidos/musica_mt.mp3" type="audio/mpeg">
     </audio>
+    <img src="Cartas_img/CartaAtras.jpg" id="carta_atras" style="display: none;" alt="">
     <script>
         var canvas = document.getElementById("canvas");
         var ctx = canvas.getContext("2d");
         var modal = document.getElementById("modal");
 
-        // Variables-Carta
-        var colorAtras = new Image();
-        colorAtras.src = 'Cartas_img/cartaAtras.jpg';
+        // Variables
+        var colorAtras = document.getElementById('carta_atras');
         var cartaMargen = 10;
         var cartaLongitud = 100;
         var cartaAncho = cartaLongitud;
