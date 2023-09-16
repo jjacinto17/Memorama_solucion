@@ -1,3 +1,6 @@
+<!-- Josue Manuel Jacinto Almaguer - IDS-TV-->
+<!-- Memorama -->
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -97,12 +100,16 @@
         style="position: absolute; bottom: 450px; right: 349px; background-color: rgba(0, 0, 0, 0.7); padding: 25px; color: white;">
         Pares Acertados: <span id="paresAcertados">0</span> | Intentos: <span id="intentos">0</span>
     </div>
+    <div id="info2"
+        style="position: absolute; bottom: 365px; right: 349px; background-color: rgba(0, 0, 0, 0.7); padding: 25px; color: white;">
+        Intentos restantes: <span id="limiteIntentos">0</span>
+    </div>
     <div id="modal">
         <div id="modal-content">
             <h2>Selecciona un modo de juego:</h2>
             <button onclick="iniciarJuego(10 * 60)">Fácil (10 minutos)</button>
             <button onclick="iniciarJuego(5 * 60)">Normal (5 minutos)</button>
-            <button onclick="iniciarJuego(1 * 60)">Difícil (1 minutos)</button>
+            <button onclick="iniciarJuego(2 * 60)">Difícil (2 minutos)</button>
         </div>
     </div>
     <div id="modalMessage" class="modal" style="display: none;">
@@ -116,6 +123,9 @@
     </audio>
     <audio id="s_barajearCarta" controls style="display: none;">
         <source src="sonidos/barajearCartas.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="s_musicaFondo" controls style="display: none;" loop preload="auto">
+        <source src="sonidos/musica_mt.mp3" type="audio/mpeg">
     </audio>
     <script>
         var canvas = document.getElementById("canvas");
@@ -139,6 +149,11 @@
         var intentos = 0;
         var s_barajearCarta = document.getElementById('s_barajearCarta');
         var s_voltearCarta = document.getElementById('s_voltearCarta');
+        var s_musicaFondo = document.getElementById('s_musicaFondo');
+        var velocidadMusicaFondo = 1.0;
+        var limiteIntentosFacil = 200;
+        var limiteIntentosNormal = 100;
+        var limiteIntentosDificil = 50;
 
         var numerosUnicos = [];
 
@@ -179,14 +194,55 @@
             modalMessage.style.display = "none";
         }
 
+        function inicializarInterfaz() {
+            var limiteIntentosElement = document.getElementById("limiteIntentos");
+            limiteIntentosElement.textContent = limiteIntentos;
+        }
+
+        function actualizarIntentosRestantes() {
+            var intentosRestantes = limiteIntentos - intentos;
+            var limiteIntentosElement = document.getElementById("limiteIntentos");
+            limiteIntentosElement.textContent = intentosRestantes;
+        }
+
+
         function iniciarJuego(tiempo) {
             modal.style.display = "none";
             modalVisible = false;
             tiempoLimite = tiempo;
             tiempoInicio = Date.now();
             tiempoRestante = tiempoLimite;
+
+            //Ajustar velocidad de la musica del fondo
+            if (tiempo === 10 * 60) {
+                velocidadMusicaFondo = 1.0;
+            } else if (tiempo === 5 * 60) {
+                velocidadMusicaFondo = 1.3;
+            } else if (tiempo === 2 * 60) {
+                velocidadMusicaFondo = 1.6;
+            }
+
             s_barajearCarta.play();
 
+
+            s_musicaFondo.playbackRate = velocidadMusicaFondo;
+            s_musicaFondo.play();
+
+            actualizarIntentosRestantes();
+
+            //Asignar limite de intentos
+            if (tiempo === 10 * 60) {
+                limiteIntentos = limiteIntentosFacil;
+            } else if (tiempo === 5 * 60) {
+                limiteIntentos = limiteIntentosNormal;
+            } else if (tiempo === 2 * 60) {
+                limiteIntentos = limiteIntentosDificil;
+            }
+
+
+            intentos = 0;
+            actualizarContadorIntentos();
+            inicializarInterfaz();
         }
 
         function dibujarTiempo() {
@@ -297,8 +353,6 @@
                 var primeraCarta = cartas_array[cartasSeleccionadas[0]];
                 var segundaCarta = cartas_array[cartasSeleccionadas[1]];
 
-
-
                 if (primeraCarta.rutaImagen === segundaCarta.rutaImagen) {
                     cartasEmparejadas += 2;
                     paresAcertados++;
@@ -338,7 +392,7 @@
             contadorEspera = 0;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Restaurar la lista de números únicos
+            // Restaurar la lista de números unicos
             numerosCartas = [];
             for (var i = 0; i < 14; i++) {
                 var numeroCarta = obtenerNumeroAleatorio();
@@ -414,13 +468,19 @@
                     s_voltearCarta.play();
                     intentos++;
                     actualizarContadorIntentos();
+                    actualizarIntentosRestantes();
+
+                    if (intentos >= limiteIntentos) {
+                        mostrarModal("¡Has alcanzado el límite de intentos! Reiniciando el juego.");
+                        reiniciar();
+                    }
                     break;
                 }
             }
         }
 
 
-        // Obtiene la posición del canvas
+        // Obtiene la posicion del canvas
         function ajusta(xx, yy) {
             var posicionCanvas = canvas.getBoundingClientRect();
             var x = xx - posicionCanvas.left;
@@ -449,7 +509,7 @@
                 }
             }
 
-            // Verificar el tiempo límite
+            // Verificar el tiempo limite
             if (!modalVisible) {
                 var currentTime = Date.now();
                 var elapsedTime = (currentTime - tiempoInicio) / 1000;
@@ -476,7 +536,7 @@
                     barajear();
                     requestAnimationFrame(update);
                 }
-            };
+            }
         }
 
     </script>
